@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: falco-driver-modern-bpf
+  namespace: falco
+  labels:
+    app.kubernetes.io/name: falco-driver-modern-bpf
+    app.kubernetes.io/version: "0.36.2"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: falco-driver-modern-bpf
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: falco-driver-modern-bpf
+    spec:
+      nodeSelector:
+        cncf-project-sub: "falco-driver-modern-bpf"
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: falco
+        image: docker.io/falcosecurity/falco-no-driver:0.36.2
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        securityContext:
+          privileged: true
+        env:
+        - name: FALCO_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: HOST_ROOT
+          value: /host
+        - name: CONFIG_VERSION
+          value: "0.1.0"
+        # Override entrypoint and ad-hoc run preinit commands before starting Falco. 
+        # Note modern-bpf has the driver already bundled into the userspace binary.
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - >-
+            sysctl kernel.bpf_stats_enabled=1 || true &&
+            apt-get update &&
+            apt-get install -y logrotate htop jq procps &&
+            mkdir -p /tmp/stats &&
+            mkdir -p /tmp/falco &&
+            touch /tmp/stats/falco_stats.jsonl &&
+            touch /tmp/falco/events.jsonl &&
+            logrotate -f /etc/falco/logrotate.conf &&
+            export FALCO_HOSTNAME="${FALCO_HOSTNAME}_${CONFIG_VERSION}" &&
+            /usr/bin/falco --modern-bpf --cri /run/containerd/containerd.sock -pk --disable-cri-async
+        volumeMounts:
+        - mountPath: /etc/falco
+          name: rulesfiles-install-dir
+        - mountPath: /root/.falco
+          name: root-falco-fs
+        - mountPath: /host/proc
+          name: proc-fs
+        - mountPath: /host/dev
+          name: dev-fs
+          readOnly: true
+        - mountPath: /host/run/containerd/containerd.sock
+          name: containerd-socket
+        - mountPath: /etc/falco/falco.yaml
+          name: falco-yaml
+          subPath: falco.yaml
+        - mountPath: /etc/falco/logrotate.conf
+          name: falco-yaml
+          subPath: logrotate.conf
+      initContainers:
+      # no falco-driver-loader needed for `--modern-bpf`
+      - name: falcoctl-artifact-install
+        image: docker.io/falcosecurity/falcoctl:0.6.2
+        imagePullPolicy: IfNotPresent
+        args: 
+          - artifact
+          - install
+          - --verbose
+        securityContext:
+        volumeMounts:
+          - mountPath: /plugins
+            name: plugins-install-dir
+          - mountPath: /rulesfiles
+            name: rulesfiles-install-dir
+          - mountPath: /etc/falcoctl
+            name: falcoctl-config-volume
+        env:
+      volumes:
+      - name: plugins-install-dir
+        emptyDir: {}
+      - name: rulesfiles-install-dir
+        emptyDir: {}
+      - name: root-falco-fs
+        emptyDir: {}  
+      - name: boot-fs
+        hostPath:
+          path: /boot
+      - name: etc-fs
+        hostPath:
+          path: /etc
+      - name: dev-fs
+        hostPath:
+          path: /dev
+      - name: containerd-socket
+        hostPath:
+          path: /run/containerd/containerd.sock
+      - name: proc-fs
+        hostPath:
+          path: /proc
+      - name: falcoctl-config-volume
+        configMap: 
+          name: falco-falcoctl
+          items:
+            - key: falcoctl.yaml
+              path: falcoctl.yaml
+      - name: falco-yaml
+        configMap:
+          name: falco-driver-modern-bpf
+          items:
+          - key: falco.yaml
+            path: falco.yaml
+          - key: logrotate.conf
+            path: logrotate.conf
+  updateStrategy:
+    type: RollingUpdate

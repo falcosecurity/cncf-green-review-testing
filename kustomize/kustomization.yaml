@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- falco-driver/modern-bpf/configmap.yaml
+- falco-driver/modern-bpf/daemonset.yaml
+- falco-driver/bpf/configmap.yaml
+- falco-driver/bpf/daemonset.yaml
+- falco-driver/kmod/configmap.yaml
+- falco-driver/kmod/daemonset.yaml
+- falco-generic/serviceaccount.yaml
+- falco-generic/falcoctl-configmap.yaml
+- synthetic-workloads/redis.yaml
+- synthetic-workloads/stress-ng.yaml
+- synthetic-workloads/falco-event-generator.yaml
