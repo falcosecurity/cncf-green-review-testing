@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: falco-driver-modern-bpf
+  name: falco-driver-ebpf
   namespace: falco
   labels:
-    app.kubernetes.io/name: falco-driver-modern-bpf
-    app.kubernetes.io/version: "0.36.2"
+    app.kubernetes.io/name: falco-driver-ebpf
+    app.kubernetes.io/version: "0.37.0"
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: falco-driver-modern-bpf
+      app.kubernetes.io/name: falco-driver-ebpf
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: falco-driver-modern-bpf
+        app.kubernetes.io/name: falco-driver-ebpf
     spec:
       nodeSelector:
-        cncf-project-sub: "falco-driver-modern-bpf"
+        cncf-project-sub: "falco-driver-ebpf"
       tolerations:
       - key: node-role.kubernetes.io/control-plane
         operator: Exists
@@ -25,8 +25,9 @@ spec:
         operator: Exists
         effect: NoSchedule
       containers:
+      # todo @incertum upgrade to new tagged image after Falco 0.37.0 release
       - name: falco
-        image: docker.io/falcosecurity/falco-no-driver:0.36.2
+        image: docker.io/falcosecurity/falco-no-driver:master
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -46,8 +47,7 @@ spec:
           value: /host
         - name: CONFIG_VERSION
           value: "0.1.0"
-        # Override entrypoint and ad-hoc run preinit commands before starting Falco. 
-        # Note modern-bpf has the driver already bundled into the userspace binary.
+        # Override entrypoint and ad-hoc run preinit commands before starting Falco
         command: ["/bin/sh"]
         args:
           - -c
@@ -61,7 +61,7 @@ spec:
             touch /tmp/falco/events.jsonl &&
             logrotate -f /etc/falco/logrotate.conf &&
             export FALCO_HOSTNAME="${FALCO_HOSTNAME}_${CONFIG_VERSION}" &&
-            /usr/bin/falco --modern-bpf --cri /run/containerd/containerd.sock -pk --disable-cri-async
+            /usr/bin/falco --cri /run/containerd/containerd.sock -pk --disable-cri-async
         volumeMounts:
         - mountPath: /etc/falco
           name: rulesfiles-install-dir
@@ -71,7 +71,6 @@ spec:
           name: proc-fs
         - mountPath: /host/dev
           name: dev-fs
-          readOnly: true
         - mountPath: /host/run/containerd/containerd.sock
           name: containerd-socket
         - mountPath: /etc/falco/falco.yaml
@@ -81,7 +80,46 @@ spec:
           name: falco-yaml
           subPath: logrotate.conf
       initContainers:
-      # no falco-driver-loader needed for `--modern-bpf`
+      # todo @incertum upgrade to new tagged image after Falco 0.37.0 release
+      - name: falco-driver-loader
+        image: docker.io/falcosecurity/falco-driver-loader:master
+        imagePullPolicy: IfNotPresent
+        # args:
+        #   - ebpf
+        command: ["/bin/bash"]
+        args: # todo revert once new driver-loader is ready, symlinks didn't work for now
+          - -c
+          - >-
+            mkdir -p /usr/src/kernels/ &&
+            cp -r ${HOST_ROOT}/usr/src/kernels/$(uname -r) /usr/src/kernels/$(uname -r) &&
+            /usr/bin/falcoctl driver config --type ebpf &&
+            /usr/bin/falcoctl driver install --compile=true --download=true
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /root/.falco
+          name: root-falco-fs
+        - mountPath: /host/proc
+          name: proc-fs
+          readOnly: true
+        - mountPath: /host/dev
+          name: dev-fs
+          readOnly: true
+        - mountPath: /host/boot
+          name: boot-fs
+          readOnly: true
+        - mountPath: /host/lib/modules
+          name: lib-modules
+        - mountPath: /host/usr/src/kernels/
+          name: usr-src-kernels-fs
+          readOnly: false # todo change after driver-loader fixes
+        - mountPath: /host/etc
+          name: etc-fs
+          readOnly: true
+        env:
+        - name: HOST_ROOT
+          value: /host
+      # todo @incertum upgrade to new tagged image after Falco 0.37.0 release
       - name: falcoctl-artifact-install
         image: docker.io/falcosecurity/falcoctl:0.6.2
         imagePullPolicy: IfNotPresent
@@ -91,12 +129,12 @@ spec:
           - --verbose
         securityContext:
         volumeMounts:
-          - mountPath: /plugins
-            name: plugins-install-dir
-          - mountPath: /rulesfiles
-            name: rulesfiles-install-dir
-          - mountPath: /etc/falcoctl
-            name: falcoctl-config-volume
+        - mountPath: /plugins
+          name: plugins-install-dir
+        - mountPath: /rulesfiles
+          name: rulesfiles-install-dir
+        - mountPath: /etc/falcoctl
+          name: falcoctl-config-volume
         env:
       volumes:
       - name: plugins-install-dir
@@ -108,6 +146,12 @@ spec:
       - name: boot-fs
         hostPath:
           path: /boot
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+      - name: usr-src-kernels-fs
+        hostPath:
+          path: /usr/src/kernels/
       - name: etc-fs
         hostPath:
           path: /etc
@@ -124,11 +168,11 @@ spec:
         configMap: 
           name: falco-falcoctl
           items:
-            - key: falcoctl.yaml
-              path: falcoctl.yaml
+          - key: falcoctl.yaml
+            path: falcoctl.yaml
       - name: falco-yaml
         configMap:
-          name: falco-driver-modern-bpf
+          name: falco-driver-ebpf
           items:
           - key: falco.yaml
             path: falco.yaml
