@@ -87,6 +87,8 @@ spec:
         imagePullPolicy: IfNotPresent
         # args:
         #   - ebpf
+        # todo we are still investigating driver-loader issues in general and better ways to support testing w/ minikube
+        # consider below override experimental for now to support minikube testing as well
         command: ["/bin/bash", "-c"]
         args:
         - |
