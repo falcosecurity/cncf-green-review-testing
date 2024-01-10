@@ -5,7 +5,7 @@ metadata:
   namespace: falco
   labels:
     app.kubernetes.io/name: falco
-    app.kubernetes.io/version: "0.36.2"
+    app.kubernetes.io/version: "0.37.0"
 data:
   falcoctl.yaml: |-
     artifact:

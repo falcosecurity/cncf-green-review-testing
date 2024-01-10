@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-driver-kmod
+  namespace: falco
+  labels:
+    app: redis
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      nodeSelector:
+        cncf-project-sub: "falco-driver-kmod"
+      containers:
+        - name: redis-app
+          image: redis:7.2.3-alpine
+          ports:
+            - containerPort: 6379 # default redis port
+        # https://redis.io/docs/management/optimization/benchmarks/
+        # redis-benchmark-* containers are in same pod w/ shared network namespace
+        # Run in safety infinite loop in addition to using -l flag
+        - name: redis-benchmark-1
+          image: redis:7.2.3-alpine
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+              while true; do
+                redis-benchmark -h localhost -n 10000000000 -l -c 100 -d 5;
+                sleep 5;
+              done
+        - name: redis-benchmark-2
+          image: redis:7.2.3-alpine
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >-
+              while true; do
+                redis-benchmark -h localhost -n 1000000000000000 -l -c 300 -d 15;
+                sleep 5;
+              done

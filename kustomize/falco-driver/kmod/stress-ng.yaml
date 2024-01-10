@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: stress-ng
+  name: stress-ng-driver-kmod
   namespace: falco
   labels:
     app: stress-ng
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: stress-ng
@@ -16,8 +16,7 @@ spec:
         app: stress-ng
     spec:
       nodeSelector:
-        # Should run on all Falco nodes w/ different cncf-project-sub labels
-        cncf-project: "falco"
+        cncf-project-sub: "falco-driver-kmod"
       containers:
       # https://wiki.ubuntu.com/Kernel/Reference/stress-ng
       - name: stress-ng-1
@@ -25,7 +24,8 @@ spec:
         command: ["/bin/bash", "-c"]
         args:
         - |
-          # apt-get update && apt-get install -y stress-ng
+          apt-get update && 
+          apt-get install -y stress-ng &&
           while true; do
             stress-ng --matrix 0 -t 1m
             sleep 5
@@ -35,7 +35,8 @@ spec:
         command: ["/bin/bash", "-c"]
         args:
         - |
-          # apt-get update && apt-get install -y stress-ng
+          apt-get update && 
+          apt-get install -y stress-ng &&
           while true; do
             stress-ng --mq 0 -t 30s
             sleep 5

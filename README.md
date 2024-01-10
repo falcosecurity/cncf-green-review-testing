@@ -12,20 +12,28 @@ The primary directory structure is outlined below:
 ```
 ├── kustomize
 │   ├── falco-driver
-│   │   ├── bpf
+│   │   ├── ebpf
+│   │   │   ├── configmap.yaml
+│   │   │   ├── daemonset.yaml
+│   │   │   ├── falco-event-generator.yaml
+│   │   │   ├── redis.yaml
+│   │   │   └── stress-ng.yaml
 │   │   ├── kmod
-│   │   └── modern-bpf
+│   │   │   ├── configmap.yaml
+│   │   │   ├── daemonset.yaml
+│   │   │   ├── falco-event-generator.yaml
+│   │   │   ├── redis.yaml
+│   │   │   └── stress-ng.yaml
+│   │   └── modern_ebpf
 │   │       ├── configmap.yaml
-│   │       └── daemonset.yaml
+│   │       ├── daemonset.yaml
+│   │       ├── falco-event-generator.yaml
+│   │       ├── redis.yaml
+│   │       └── stress-ng.yaml
 │   ├── falco-generic
 │   │   ├── falcoctl-configmap.yaml
 │   │   └── serviceaccount.yaml
-│   ├── kustomization.yaml
-│   └── synthetic-workloads
-│       ├── falco-event-generator.yaml
-│       ├── redis.yaml
-│       ├── ...
-│       └── stress-ng.yaml
+│   └── kustomization.yaml
 ├── LICENSE
 ├── OWNERS
 └── README.md
@@ -33,7 +41,7 @@ The primary directory structure is outlined below:
 
 ## Falco Deployment
 
-The Falco daemonset generic under `./kustomize` resemble existing generic available at https://github.com/falcosecurity/deploy-kubernetes/, but are customized to cater to specific purposes and requirements (e.g. namespace `falco` and nodeSelector `cncf-project-sub: "falco-driver-modern-bpf"`).
+The Falco daemonset definitions under `./kustomize/driver/{ebpf,kmod,modern_ebpf}/daemonset.yaml` resemble existing templates available at https://github.com/falcosecurity/deploy-kubernetes/, but are customized to cater to specific purposes and requirements (e.g. namespace `falco` and nodeSelector `cncf-project-sub: "falco-driver-modern-ebpf"`).
 
 Furthermore, there's a customized setup within the Falco container entrypoint and `falco.yaml` settings, focusing on benchmarking Falco's performance. Notably, we direct Falco alerts and internal metrics solely to log-rotated files, unlike real-world scenarios where this data is usually sent off the knode to a data lake.
 
@@ -41,16 +49,16 @@ For our testing process, each Falco [driver](https://github.com/falcosecurity/li
 
 ## Synthetic Workloads Deployment
 
-The `./kustomize/synthetic-workloads` directory contains deployments for microservices or teststress frameworks to generate synthetic workloads on the CNC testbed servers. This aims to test Falco with a certain level of realistic application activity (w/ nodeSelector `cncf-project: "falco"`).
+Each Falco driver-specific deployment under `./kustomize/driver/{ebpf,kmod,modern_ebpf}/` also contains deployments for microservices or teststress frameworks aimed at generating synthetic workloads on the CNC testbed servers.
 
 ## Summary CNCF Green Reviews Cluster Requirements
 
 | Knode   | Falco Driver | Namespace | Node Selector                           |
 |---------|--------------|-----------|----------------------------------------|
 | knode A | modern-bpf   | falco     | cncf-project: "falco"                  |
-|         |              |           | cncf-project-sub: "falco-driver-modern-bpf" |
+|         |              |           | cncf-project-sub: "falco-driver-modern-ebpf" |
 | knode B | bpf          | falco     | cncf-project: "falco"                  |
-|         |              |           | cncf-project-sub: "falco-driver-bpf"   |
+|         |              |           | cncf-project-sub: "falco-driver-ebpf"   |
 | knode C | kmod         | falco     | cncf-project: "falco"                  |
 |         |              |           | cncf-project-sub: "falco-driver-kmod"  |
 
@@ -63,7 +71,7 @@ The `./kustomize/synthetic-workloads` directory contains deployments for microse
 
 Notes:
 - The Falco Deployment enables `kernel.bpf_stats_enabled` by default.
-- For both `bpf` and `kmod`, additional host mounts are required, such as `/usr/src/kernels/` and `/lib/modules`. Please refer to the respective daemonset configuration for more details.
+- For both `ebpf` and `kmod`, additional host mounts are required, such as `/usr/src/` and `/lib/modules`. Please refer to the respective daemonset configuration for more details.
 - We anticipate `containerd` to be the container runtime socket located at `/run/containerd/containerd.sock`.
 
 
@@ -72,60 +80,83 @@ Notes:
 <details>
 	<summary>Expand Testing Instructions</summary>
 
-To test these configurations for the modern BPF driver on localhost using [minikube](https://minikube.sigs.k8s.io/docs/start/), make sure you have minikube installed and running. In order to test `kmod` and `bpf` drivers, additional host mounts are required. Minikube needs a specific setting to accommodate this, as shown below:
+To test these configurations for the modern BPF driver on localhost using [minikube](https://minikube.sigs.k8s.io/docs/start/), make sure you have minikube and [kubectl](https://pwittrock.github.io/docs/tasks/tools/install-kubectl/) installed and running. In order to test `kmod` and `ebpf` drivers, additional host mounts are required. Minikube needs a specific setting to accommodate this, as shown below:
 
 ```
-minikube start --mount --mount-string="/usr/src:/usr/src" --driver=docker
+minikube start --mount --mount-string="/usr/src:/usr/src" --mount --mount-string="/dev:/dev" --driver=docker --nodes 4
 ```
 
 __NOTE__: You won't be able to properly test Falco's container engine using `minikube`. Please be aware of this limitation.
 
+__NOTE__: For `localhost` testing reduce the number of replicas for the synthetic workload deployments.
+
 Proceed by executing the following setup commands:
 
-```
+```bash
 kubectl create namespace falco;
-# Always need the generic label
-kubectl label nodes minikube cncf-project=falco;
+kubectl get nodes;
 
 # Test modern-bpf (easiest)
-kubectl label nodes minikube cncf-project-sub=falco-driver-modern-bpf;
+kubectl label nodes minikube-m02 cncf-project=falco cncf-project-sub=falco-driver-modern-ebpf --overwrite;
 
 # Test bpf
-# kubectl label nodes minikube cncf-project-sub=falco-driver-bpf --overwrite;
+kubectl label nodes minikube-m03 cncf-project=falco cncf-project-sub=falco-driver-ebpf --overwrite;
 
 # Test kmod
-# kubectl label nodes minikube cncf-project-sub=falco-driver-kmod --overwrite;
+# WARNING: Testing kernel modules on a local dev box is more risky, 
+# remember to unload the module `sudo rmmod falco`
+# Testing kmod within a smaller VM with minikube likely crashes, only test w/ minikube on a larger native box
+
+# kubectl label nodes minikube-m04 cncf-project=falco cncf-project-sub=falco-driver-kmod --overwrite;
 
 kubectl get nodes --show-labels;
 ```
 
 Apply the configurations by executing the following command:
 
-```
+```bash
 kubectl apply -k ./kustomize
+# Tear-down
+kubectl delete -k ./kustomize
 ```
 
 Verify if the pods are up and running (Note that the output below is not regularly updated, and there might be more pods and containers running than displayed): 
 
-```
+```bash
 kubectl get pods -n falco
 
-NAME                                     READY   STATUS    RESTARTS   AGE
-falco-driver-modern-bpf-5vwl6            1/1     Running   0          15m
-falco-event-generator-65d99cdd6c-5hq8t   1/1     Running   0          15m
-redis-54f4f4997d-9d652                   3/3     Running   0          15m
-stress-ng-7b488f58c4-tjdlc               2/2     Running   0          15m
+NAME                                                        READY   STATUS    RESTARTS   AGE
+falco-driver-ebpf-bjvgc                                     1/1     Running   0          5m26s
+falco-driver-modern-ebpf-fpph9                              1/1     Running   0          5m26s
+falco-event-generator-driver-ebpf-785c6cc7dc-58wjr          1/1     Running   0          5m27s
+falco-event-generator-driver-modern-ebpf-64674f78bf-fjvn7   1/1     Running   0          5m27s
+redis-driver-ebpf-cbdd47b74-4drg4                           3/3     Running   0          5m27s
+redis-driver-ebpf-cbdd47b74-lb6wt                           3/3     Running   0          5m27s
+redis-driver-ebpf-cbdd47b74-lt6q7                           3/3     Running   0          5m27s
+redis-driver-ebpf-cbdd47b74-pcm8g                           3/3     Running   0          5m27s
+redis-driver-ebpf-cbdd47b74-rv2ww                           3/3     Running   0          5m27s
+redis-driver-modern-ebpf-7c4bdd9d58-2fqp9                   3/3     Running   0          5m27s
+redis-driver-modern-ebpf-7c4bdd9d58-2ms8j                   3/3     Running   0          5m27s
+redis-driver-modern-ebpf-7c4bdd9d58-k5vtw                   3/3     Running   0          5m27s
+redis-driver-modern-ebpf-7c4bdd9d58-kztgj                   3/3     Running   0          5m27s
+redis-driver-modern-ebpf-7c4bdd9d58-rf9m2                   3/3     Running   0          5m27s
+stress-ng-driver-ebpf-78766f6fbd-cxljg                      2/2     Running   0          5m27s
+stress-ng-driver-ebpf-78766f6fbd-rb9wn                      2/2     Running   0          5m27s
+stress-ng-driver-modern-ebpf-7885fdc996-mkb78               2/2     Running   0          5m27s
+stress-ng-driver-modern-ebpf-7885fdc996-rzl4h               2/2     Running   0          5m26s
+...
+
 ```
 
 To drop interactively into the Falco container, execute the `exec` command as follows:
 
-```
-kubectl -n falco exec -it falco-driver-modern-bpf-5vwl6 -c falco -- bash
+```bash
+kubectl -n falco exec -it falco-driver-modern-ebpf-5vwl6 -c falco -- bash
 ```
 
 Execute dummy suspicious commands and examine Falco's alert outputs and native metrics logs:
 
-```
+```bash
 cat /etc/shadow
 # Falco alerts outputs
 cat /tmp/falco/events.jsonl
@@ -135,18 +166,18 @@ cat /tmp/stats/falco_stats.jsonl
 
 The Falco container includes utilities installed for ad-hoc checks on the Falco process:
 
-```
+```bash
 ps aux 
 htop
 ```
 
 Extra Tips
 
-```
+```bash
 # Check if Falco's kmod was loaded
 lsmod | grep falco
 # Inspect possible issues with a pod
-kubectl -n falco describe pod falco-driver-modern-bpf-5vwl6
+kubectl -n falco describe pod falco-driver-modern-ebpf-5vwl6
 ```
 
 </details>
