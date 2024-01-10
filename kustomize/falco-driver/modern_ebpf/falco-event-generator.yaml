@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: falco-event-generator
+  name: falco-event-generator-driver-modern-ebpf
   namespace: falco
   labels:
     app: falco-event-generator
@@ -16,8 +16,7 @@ spec:
         app: falco-event-generator
     spec:
       nodeSelector:
-        # Should run on all Falco nodes w/ different cncf-project-sub labels
-        cncf-project: "falco"
+        cncf-project-sub: "falco-driver-modern-ebpf"
       containers:
       - name: falco-event-generator
         securityContext:

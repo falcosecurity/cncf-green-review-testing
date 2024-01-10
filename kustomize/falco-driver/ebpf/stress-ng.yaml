@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stress-ng-driver-ebpf
+  namespace: falco
+  labels:
+    app: stress-ng
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stress-ng
+  template:
+    metadata:
+      labels:
+        app: stress-ng
+    spec:
+      nodeSelector:
+        cncf-project-sub: "falco-driver-ebpf"
+      containers:
+      # https://wiki.ubuntu.com/Kernel/Reference/stress-ng
+      - name: stress-ng-1
+        image: ubuntu:22.04
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          apt-get update && 
+          apt-get install -y stress-ng &&
+          while true; do
+            stress-ng --matrix 0 -t 1m
+            sleep 5
+          done
+      - name: stress-ng-2
+        image: ubuntu:22.04
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          apt-get update && 
+          apt-get install -y stress-ng &&
+          while true; do
+            stress-ng --mq 0 -t 30s
+            sleep 5
+          done

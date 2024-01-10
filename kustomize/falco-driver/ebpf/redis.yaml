@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis
+  name: redis-driver-ebpf
   namespace: falco
   labels:
     app: redis
 spec:
-  replicas: 1
+  replicas: 5
   selector:
     matchLabels:
       app: redis
@@ -16,8 +16,7 @@ spec:
         app: redis
     spec:
       nodeSelector:
-        # Should run on all Falco nodes w/ different cncf-project-sub labels
-        cncf-project: "falco"
+        cncf-project-sub: "falco-driver-ebpf"
       containers:
         - name: redis-app
           image: redis:7.2.3-alpine
