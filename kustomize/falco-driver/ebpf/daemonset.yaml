@@ -74,6 +74,10 @@ spec:
           name: etc-fs
         - mountPath: /host/run/containerd/containerd.sock
           name: containerd-socket
+        - mountPath: /host/run/k3s/containerd/containerd.sock
+          name: containerd-k3s-socket
+        - mountPath: /host/run/crio/crio.sock
+          name: crio-socket
         - mountPath: /etc/falco/falco.yaml
           name: falco-yaml
           subPath: falco.yaml
@@ -154,6 +158,12 @@ spec:
       - name: containerd-socket
         hostPath:
           path: /run/containerd/containerd.sock
+      - name: containerd-k3s-socket
+        hostPath:
+          path: /run/k3s/containerd/containerd.sock
+      - name: crio-socket
+        hostPath:
+          path: /run/crio/crio.sock
       - name: proc-fs
         hostPath:
           path: /proc
