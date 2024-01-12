@@ -71,7 +71,7 @@ Each Falco driver-specific deployment under `./kustomize/driver/{ebpf,kmod,moder
 Notes:
 - The Falco Deployment enables `kernel.bpf_stats_enabled` by default.
 - For both `ebpf` and `kmod`, additional host mounts are required, such as `/usr/src/` and `/lib/modules`. Please refer to the respective daemonset configuration for more details.
-- We anticipate `containerd` to be the container runtime socket located at `/run/containerd/containerd.sock`.
+- We anticipate `containerd` to be the container runtime socket located at `/run/k3s/containerd/containerd.sock`.
 
 ## HowTo: A Guide for `localhost` Testing
 
@@ -84,9 +84,11 @@ To test these configurations on localhost using [minikube](https://minikube.sigs
 minikube start --mount --mount-string="/usr/src:/usr/src" --mount --mount-string="/dev:/dev" --driver=docker --nodes 4
 ```
 
-__NOTE__: You won't be able to properly test Falco's container engine using `minikube`. Please be aware of this limitation.
+__NOTE__: You won't be able to properly test Falco's container engine using `minikube`. Please be aware of this limitation, and there can still be issues with host mounts.
 
 __NOTE__: For `localhost` testing reduce the number of replicas for the synthetic workload deployments.
+
+__NOTE__: Finally, we recommend testing on Ubuntu 22.04 to reflect the CNCF testbed setup. You can use the Vagrant VM config shared [here](https://github.com/falcosecurity/cncf-green-review-testing/issues/7).
 
 Proceed by executing the following setup commands:
 
