@@ -59,7 +59,7 @@ spec:
           touch /tmp/falco/events.jsonl &&
           logrotate -f /etc/falco/logrotate.conf &&
           export FALCO_HOSTNAME="${FALCO_HOSTNAME}_${CONFIG_VERSION}" &&
-          /usr/bin/falco --cri /run/containerd/containerd.sock -pk --disable-cri-async
+          /usr/bin/falco -pk --disable-cri-async
         volumeMounts:
         - mountPath: /etc/falco
           name: rulesfiles-install-dir
@@ -84,23 +84,8 @@ spec:
       - name: falco-driver-loader
         image: docker.io/falcosecurity/falco-driver-loader:master
         imagePullPolicy: IfNotPresent
-        # args: 
-        # - kmod
-        # todo we are still investigating driver-loader issues in general and better ways to support testing w/ minikube
-        # consider below override experimental for now to support minikube testing as well
-        command: ["/bin/bash", "-c"]
-        args:
-        - |
-          if [ "$(ls -A ${HOST_ROOT}/usr/src/kernels/$(uname -r))" ]; then
-              echo "RPM based distro"
-              mkdir -p /usr/src/kernels/ && cp -r ${HOST_ROOT}/usr/src/kernels/$(uname -r) /usr/src/kernels/$(uname -r) &&
-              /usr/bin/falcoctl driver config --type kmod && /usr/bin/falcoctl driver install --compile=true --download=true
-          elif [ "$(ls -A ${HOST_ROOT}/usr/src/linux-headers-$(uname -r))" ]; then
-              echo "Ubuntu distro"
-              cp -r $(ls -d ${HOST_ROOT}/usr/src/* | head -n 1) /usr/src/ &&
-              cp -r $(ls -d ${HOST_ROOT}/usr/src/linux-headers-$(uname -r) | head -n 1) /usr/src/linux-headers-$(uname -r) &&
-              /usr/bin/falcoctl driver config --type kmod && /usr/bin/falcoctl driver install --compile=true --download=true
-          fi
+        args: 
+        - kmod
         securityContext:
           privileged: true
         volumeMounts:
