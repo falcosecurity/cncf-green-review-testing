@@ -55,9 +55,9 @@ Each Falco driver-specific deployment under `./kustomize/driver/{ebpf,kmod,moder
 
 | Knode   | Falco Driver | Namespace | Node Selector                           |
 |---------|--------------|-----------|----------------------------------------|
-| knode A | modern-bpf   | falco     | cncf-project: "falco"                  |
+| knode A | modern-ebpf   | falco     | cncf-project: "falco"                  |
 |         |              |           | cncf-project-sub: "falco-driver-modern-ebpf" |
-| knode B | bpf          | falco     | cncf-project: "falco"                  |
+| knode B | ebpf          | falco     | cncf-project: "falco"                  |
 |         |              |           | cncf-project-sub: "falco-driver-ebpf"   |
 | knode C | kmod         | falco     | cncf-project: "falco"                  |
 |         |              |           | cncf-project-sub: "falco-driver-kmod"  |
@@ -65,22 +65,20 @@ Each Falco driver-specific deployment under `./kustomize/driver/{ebpf,kmod,moder
 | Knode   | Kernel Version Requirement | Additional Requirements  | BPF Stats Enabled |
 |---------|---------------------------|--------------------------|-------------------|
 | knode A | >= 5.8                    | eBPF supported           | 1                 |
-| knode B | >= 4.14                   | eBPF supported           | 1                 |
-| knode C | >= 2.6.32                 | DKMS package installed   | N/A               |
-
+| knode B | >= 4.14                   | eBPF supported, Kernel headers installed           | 1                 |
+| knode C | >= 2.6.32                 | DKMS package, Kernel headers installed   | N/A               |
 
 Notes:
 - The Falco Deployment enables `kernel.bpf_stats_enabled` by default.
 - For both `ebpf` and `kmod`, additional host mounts are required, such as `/usr/src/` and `/lib/modules`. Please refer to the respective daemonset configuration for more details.
 - We anticipate `containerd` to be the container runtime socket located at `/run/containerd/containerd.sock`.
 
-
 ## HowTo: A Guide for `localhost` Testing
 
 <details>
 	<summary>Expand Testing Instructions</summary>
 
-To test these configurations for the modern BPF driver on localhost using [minikube](https://minikube.sigs.k8s.io/docs/start/), make sure you have minikube and [kubectl](https://pwittrock.github.io/docs/tasks/tools/install-kubectl/) installed and running. In order to test `kmod` and `ebpf` drivers, additional host mounts are required. Minikube needs a specific setting to accommodate this, as shown below:
+To test these configurations on localhost using [minikube](https://minikube.sigs.k8s.io/docs/start/), make sure you have minikube and [kubectl](https://pwittrock.github.io/docs/tasks/tools/install-kubectl/) installed and running. In order to test `kmod` and `ebpf` drivers, additional host mounts are required. Minikube needs a specific setting to accommodate this, as shown below:
 
 ```
 minikube start --mount --mount-string="/usr/src:/usr/src" --mount --mount-string="/dev:/dev" --driver=docker --nodes 4
@@ -96,13 +94,13 @@ Proceed by executing the following setup commands:
 kubectl create namespace falco;
 kubectl get nodes;
 
-# Test modern-bpf (easiest)
+# Test cncf-project-sub=falco-driver-modern-ebpf (easiest)
 kubectl label nodes minikube-m02 cncf-project=falco cncf-project-sub=falco-driver-modern-ebpf --overwrite;
 
-# Test bpf
+# Test cncf-project-sub=falco-driver-ebpf
 kubectl label nodes minikube-m03 cncf-project=falco cncf-project-sub=falco-driver-ebpf --overwrite;
 
-# Test kmod
+# Test cncf-project-sub=falco-driver-kmod
 # WARNING: Testing kernel modules on a local dev box is more risky, 
 # remember to unload the module `sudo rmmod falco`
 # Testing kmod within a smaller VM with minikube likely crashes, only test w/ minikube on a larger native box
