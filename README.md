@@ -1,10 +1,10 @@
-# cncf-green-reviews-testing
+# cncf-green-review-testing
 
 [![Falco Infra Repository](https://github.com/falcosecurity/evolution/blob/main/repos/badges/falco-infra-blue.svg)](https://github.com/falcosecurity/evolution/blob/main/REPOSITORIES.md#infra-scope) [![Sandbox](https://img.shields.io/badge/status-sandbox-red?style=for-the-badge)](https://github.com/falcosecurity/evolution/blob/main/REPOSITORIES.md#sandbox) [![License](https://img.shields.io/github/license/falcosecurity/testing?style=for-the-badge)](./LICENSE)
 
 Welcome to The Falco Project's collaborative testing initiatives in partnership with the [CNCF Environmental Sustainability Technical Advisory Group (TAG ENV)](https://github.com/cncf/tag-env-sustainability) - Green Reviews Working Group.
 
-This repository functions as the hosting platform for Falcos' daemonset configurations intended for testing with the CNCF Green Reviews Working Group. These configurations will be used within the following repository: https://github.com/cncf-tags/green-reviews-tooling/, leveraging the [Flux](https://fluxcd.io/flux/) framework.
+This repository functions as the hosting platform for Falcos' daemonset configurations intended for testing with the CNCF Green Reviews Working Group. These configurations will be used within the following repository: https://github.com/cncf-tags/green-reviews-tooling/, leveraging the [Flux](https://fluxcd.io/flux/) framework (see the [Falco Flux Config](https://github.com/cncf-tags/green-reviews-tooling/tree/main/clusters/projects/falco)).
 
 
 The primary directory structure is outlined below:
@@ -41,7 +41,7 @@ The primary directory structure is outlined below:
 
 ## Falco Deployment
 
-The Falco daemonset definitions under `./kustomize/driver/{ebpf,kmod,modern_ebpf}/daemonset.yaml` resemble existing templates available at https://github.com/falcosecurity/deploy-kubernetes/, but are customized to cater to specific purposes and requirements (e.g. namespace `falco` and nodeSelector `cncf-project-sub: "falco-driver-modern-ebpf"`).
+The Falco daemonset definitions under `./kustomize/driver/{ebpf,kmod,modern_ebpf}/daemonset.yaml` resemble existing templates available at https://github.com/falcosecurity/deploy-kubernetes/, but are customized to cater to specific purposes and requirements (e.g. namespace `falco` and a driver specific nodeSelector, e.g.  `cncf-project-sub: "falco-driver-modern-ebpf"`).
 
 Furthermore, there's a customized setup within the Falco container entrypoint and `falco.yaml` settings, focusing on benchmarking Falco's performance. Notably, we direct Falco alerts and internal metrics solely to log-rotated files, unlike real-world scenarios where this data is usually sent off the knode to a data lake.
 
