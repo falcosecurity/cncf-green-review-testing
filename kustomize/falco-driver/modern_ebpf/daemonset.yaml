@@ -25,9 +25,8 @@ spec:
         operator: Exists
         effect: NoSchedule
       containers:
-      # todo @incertum upgrade to new tagged image after Falco 0.37.0 release
       - name: falco
-        image: docker.io/falcosecurity/falco-no-driver:master
+        image: docker.io/falcosecurity/falco-no-driver:0.37.0
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -87,9 +86,8 @@ spec:
           subPath: logrotate.conf
       initContainers:
       # no falco-driver-loader needed for `modern_ebpf`
-      # todo @incertum upgrade to new tagged image after Falco 0.37.0 release
       - name: falcoctl-artifact-install
-        image: docker.io/falcosecurity/falcoctl:0.6.2
+        image: docker.io/falcosecurity/falcoctl:0.7.1
         imagePullPolicy: IfNotPresent
         args: 
           - artifact
