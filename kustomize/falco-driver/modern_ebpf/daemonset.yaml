@@ -51,7 +51,7 @@ spec:
         command: ["/bin/bash", "-c"]
         args:
         - |
-          sysctl kernel.bpf_stats_enabled=1 || true &&
+          echo 1 > ${HOST_ROOT}/proc/sys/kernel/bpf_stats_enabled &&
           apt-get update &&
           apt-get install -y logrotate htop jq procps &&
           mkdir -p /tmp/stats &&

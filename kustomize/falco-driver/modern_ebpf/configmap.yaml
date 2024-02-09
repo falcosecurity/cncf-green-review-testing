@@ -24,7 +24,7 @@ data:
   # `json_output` is enabled
   # `json_include_output_property` set to false
   # `json_include_tags_property` set to false
-  # `metrics` is enabled, interval: 2m w/ file output
+  # `metrics` is enabled, interval: 30m w/ file output
   # `priority` set to "info" instead of "debug"
   # `webserver` is disabled
   falco.yaml: |-
@@ -81,7 +81,7 @@ data:
       max_consecutives: 1000
     metrics:
       enabled: true
-      interval: 2m
+      interval: 30m
       output_rule: true
       output_file: /tmp/stats/falco_stats.jsonl
       resource_utilization_enabled: true

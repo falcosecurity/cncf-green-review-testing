@@ -6,7 +6,7 @@ metadata:
   labels:
     app: redis
 spec:
-  replicas: 5
+  replicas: 1
   selector:
     matchLabels:
       app: redis
@@ -32,16 +32,6 @@ spec:
             - -c
             - >-
               while true; do
-                redis-benchmark -h localhost -n 10000000000 -l -c 100 -d 5;
-                sleep 5;
-              done
-        - name: redis-benchmark-2
-          image: redis:7.2.3-alpine
-          command: ["/bin/sh"]
-          args:
-            - -c
-            - >-
-              while true; do
-                redis-benchmark -h localhost -n 1000000000000000 -l -c 300 -d 15;
+                redis-benchmark -h localhost -l -n 100 -c 4;
                 sleep 5;
               done
