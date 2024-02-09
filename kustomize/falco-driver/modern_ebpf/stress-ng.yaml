@@ -6,7 +6,7 @@ metadata:
   labels:
     app: stress-ng
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: stress-ng
@@ -27,17 +27,6 @@ spec:
           apt-get update && 
           apt-get install -y stress-ng &&
           while true; do
-            stress-ng --matrix 0 -t 1m
-            sleep 5
-          done
-      - name: stress-ng-2
-        image: ubuntu:22.04
-        command: ["/bin/bash", "-c"]
-        args:
-        - |
-          apt-get update && 
-          apt-get install -y stress-ng &&
-          while true; do
-            stress-ng --mq 0 -t 30s
+            stress-ng --matrix 1 -t 1m
             sleep 5
           done

@@ -72,6 +72,7 @@ Notes:
 - The Falco Deployment enables `kernel.bpf_stats_enabled` by default.
 - For both `ebpf` and `kmod`, additional host mounts are required, such as `/usr/src/` and `/lib/modules`. Please refer to the respective daemonset configuration for more details.
 - We anticipate `containerd` to be the container runtime socket located at `/run/k3s/containerd/containerd.sock`.
+- The CNCF test Kubernetes cluster offers machines with 16 CPUs.
 
 ## HowTo: A Guide for `localhost` Testing
 
