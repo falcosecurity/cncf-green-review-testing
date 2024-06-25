@@ -16,7 +16,7 @@ spec:
         app.kubernetes.io/name: falco-driver-ebpf
     spec:
       nodeSelector:
-        cncf-project-sub: "falco-driver-ebpf"
+        node-role.kubernetes.io/benchmark: "true"
       tolerations:
       - key: node-role.kubernetes.io/control-plane
         operator: Exists
