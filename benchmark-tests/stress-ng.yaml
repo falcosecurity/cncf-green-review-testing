@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stress-ng
+  namespace: falco
+  labels:
+    app: stress-ng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stress-ng
+  template:
+    metadata:
+      labels:
+        app: stress-ng
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/benchmark: "true"
+      containers:
+      # https://wiki.ubuntu.com/Kernel/Reference/stress-ng
+      - name: stress-ng-1
+        image: ubuntu:22.04
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          apt-get update && 
+          apt-get install -y stress-ng &&
+          while true; do
+            stress-ng --matrix 1 -t 1m
+            sleep 5
+          done
