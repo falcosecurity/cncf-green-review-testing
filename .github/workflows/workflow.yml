@@ -1,0 +1,15 @@
+on: {}
+
+jobs:
+  stress-ng-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - run: |
+          # the action to take here depends on the Functional Unit of the CNCF project. wait for amount of time, for resources
+          kubectl apply -f https://raw.githubusercontent.com/falcosecurity/cncf-green-review-testing/main/kustomize/falco-driver/ebpf/stress-ng.yaml
+          # the one above is a workflow with a single benchmark job, but if your workflow needs multiple benchmark job, it is enough to define additional steps:
+          # e.g. for redis-test: kubectl apply -f https://github.com/falcosecurity/cncf-green-review-testing/blob/main/kustomize/falco-driver/ebpf/redis.yaml
+          # for event-generator-test -> kubectl apply -f https://github.com/falcosecurity/cncf-green-review-testing/blob/main/kustomize/falco-driver/ebpf/falco-event-generator.yaml
+          wait 15m
+      - run: |
+         kubectl delete -f https://raw.githubusercontent.com/falcosecurity/cncf-green-review-testing/main/kustomize/falco-driver/ebpf/stress-ng.yaml  # other Falco tests:
