@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: falco-event-generator
-  namespace: falco
+  namespace: benchmark
   labels:
     app: falco-event-generator
 spec:
@@ -38,7 +38,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: falco
+  namespace: benchmark
   labels:
     app: redis
 spec:
@@ -76,7 +76,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stress-ng
-  namespace: falco
+  namespace: benchmark
   labels:
     app: stress-ng
 spec:
