@@ -26,7 +26,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: falco
-        image: docker.io/falcosecurity/falco-no-driver:0.37.0
+        image: docker.io/falcosecurity/falco:0.40.0-debian
         imagePullPolicy: IfNotPresent
         resources:
           limits:
