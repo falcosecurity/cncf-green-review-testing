@@ -60,7 +60,7 @@ spec:
           touch /tmp/falco/events.jsonl &&
           logrotate -f /etc/falco/logrotate.conf &&
           export FALCO_HOSTNAME="${FALCO_HOSTNAME}_${CONFIG_VERSION}" &&
-          /usr/bin/falco -pk --disable-cri-async
+          /usr/bin/falco -pk -o container_engines.cri.disable_async=true
         volumeMounts:
         - mountPath: /etc/falco
           name: rulesfiles-install-dir
