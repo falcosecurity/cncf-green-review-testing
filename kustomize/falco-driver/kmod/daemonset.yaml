@@ -5,7 +5,7 @@ metadata:
   namespace: falco
   labels:
     app.kubernetes.io/name: falco-driver-kmod
-    app.kubernetes.io/version: "0.37.0"
+    app.kubernetes.io/version: "0.41.0"
 spec:
   selector:
     matchLabels:
@@ -26,7 +26,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: falco
-        image: docker.io/falcosecurity/falco:0.40.0-debian
+        image: docker.io/falcosecurity/falco:0.41.0-debian
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -45,20 +45,15 @@ spec:
         - name: HOST_ROOT
           value: /host
         - name: CONFIG_VERSION
-          value: "0.1.0-alpha"
+          value: "0.1.0-beta"
         # Override entrypoint and ad-hoc run preinit commands before starting Falco
         command: ["/bin/bash", "-c"]
         args:
         - |
           apt-get update &&
-          apt-get install -y logrotate htop jq procps kmod &&
-          mkdir -p /tmp/stats &&
-          mkdir -p /tmp/falco &&
-          touch /tmp/stats/falco_stats.jsonl &&
-          touch /tmp/falco/events.jsonl &&
-          logrotate -f /etc/falco/logrotate.conf &&
-          export FALCO_HOSTNAME="${FALCO_HOSTNAME}_${CONFIG_VERSION}" &&
-          /usr/bin/falco -pk -o container_engines.cri.disable_async=true
+          apt-get install -y htop jq procps kmod &&
+          FALCO_HOSTNAME="${FALCO_HOSTNAME}_${CONFIG_VERSION}" &&
+          /usr/bin/falco
         volumeMounts:
         - mountPath: /etc/falco
           name: rulesfiles-install-dir
@@ -79,12 +74,9 @@ spec:
         - mountPath: /etc/falco/falco.yaml
           name: falco-yaml
           subPath: falco.yaml
-        - mountPath: /etc/falco/logrotate.conf
-          name: falco-yaml
-          subPath: logrotate.conf
       initContainers:
       - name: falco-driver-loader
-        image: docker.io/falcosecurity/falco-driver-loader:0.37.0
+        image: docker.io/falcosecurity/falco-driver-loader:0.41.0
         imagePullPolicy: IfNotPresent
         args: 
         - kmod
@@ -114,7 +106,7 @@ spec:
         - name: HOST_ROOT
           value: /host
       - name: falcoctl-artifact-install
-        image: docker.io/falcosecurity/falcoctl:0.7.1
+        image: docker.io/falcosecurity/falcoctl:0.11.2
         imagePullPolicy: IfNotPresent
         args: 
           - artifact
@@ -175,7 +167,5 @@ spec:
           items:
           - key: falco.yaml
             path: falco.yaml
-          - key: logrotate.conf
-            path: logrotate.conf
   updateStrategy:
     type: RollingUpdate
