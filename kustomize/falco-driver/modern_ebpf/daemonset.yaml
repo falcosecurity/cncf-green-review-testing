@@ -5,7 +5,7 @@ metadata:
   namespace: falco
   labels:
     app.kubernetes.io/name: falco-driver-modern-ebpf
-    app.kubernetes.io/version: "0.37.0"
+    app.kubernetes.io/version: "0.41.0"
 spec:
   selector:
     matchLabels:
@@ -26,7 +26,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: falco
-        image: docker.io/falcosecurity/falco:0.40.0-debian
+        image: docker.io/falcosecurity/falco:0.41.0-debian
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -45,7 +45,7 @@ spec:
         - name: HOST_ROOT
           value: /host
         - name: CONFIG_VERSION
-          value: "0.1.0-alpha"
+          value: "0.1.0-beta"
         # Override entrypoint and ad-hoc run preinit commands before starting Falco
         # Note: modern_ebpf has the driver already bundled into the userspace binary
         command: ["/bin/bash", "-c"]
@@ -53,14 +53,9 @@ spec:
         - |
           echo 1 > ${HOST_ROOT}/proc/sys/kernel/bpf_stats_enabled &&
           apt-get update &&
-          apt-get install -y logrotate htop jq procps &&
-          mkdir -p /tmp/stats &&
-          mkdir -p /tmp/falco &&
-          touch /tmp/stats/falco_stats.jsonl &&
-          touch /tmp/falco/events.jsonl &&
-          logrotate -f /etc/falco/logrotate.conf &&
-          export FALCO_HOSTNAME="${FALCO_HOSTNAME}_${CONFIG_VERSION}" &&
-          /usr/bin/falco -pk -o container_engines.cri.disable_async=true
+          apt-get install -y htop jq procps &&
+          FALCO_HOSTNAME="${FALCO_HOSTNAME}_${CONFIG_VERSION}" &&
+          /usr/bin/falco
         volumeMounts:
         - mountPath: /etc/falco
           name: rulesfiles-install-dir
@@ -81,13 +76,10 @@ spec:
         - mountPath: /etc/falco/falco.yaml
           name: falco-yaml
           subPath: falco.yaml
-        - mountPath: /etc/falco/logrotate.conf
-          name: falco-yaml
-          subPath: logrotate.conf
       initContainers:
       # no falco-driver-loader needed for `modern_ebpf`
       - name: falcoctl-artifact-install
-        image: docker.io/falcosecurity/falcoctl:0.7.1
+        image: docker.io/falcosecurity/falcoctl:0.11.2
         imagePullPolicy: IfNotPresent
         args: 
           - artifact
@@ -142,7 +134,5 @@ spec:
           items:
           - key: falco.yaml
             path: falco.yaml
-          - key: logrotate.conf
-            path: logrotate.conf
   updateStrategy:
     type: RollingUpdate
