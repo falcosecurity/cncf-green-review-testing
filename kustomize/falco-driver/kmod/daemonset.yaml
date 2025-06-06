@@ -5,7 +5,7 @@ metadata:
   namespace: falco
   labels:
     app.kubernetes.io/name: falco-driver-kmod
-    app.kubernetes.io/version: "0.41.0"
+    app.kubernetes.io/version: "0.41.1"
 spec:
   selector:
     matchLabels:
@@ -26,7 +26,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: falco
-        image: docker.io/falcosecurity/falco:0.41.0-debian
+        image: docker.io/falcosecurity/falco:0.41.1-debian
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -76,7 +76,7 @@ spec:
           subPath: falco.yaml
       initContainers:
       - name: falco-driver-loader
-        image: docker.io/falcosecurity/falco-driver-loader:0.41.0
+        image: docker.io/falcosecurity/falco-driver-loader:0.41.1
         imagePullPolicy: IfNotPresent
         args: 
         - kmod

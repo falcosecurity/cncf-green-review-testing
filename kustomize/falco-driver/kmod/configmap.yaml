@@ -5,7 +5,7 @@ metadata:
   namespace: falco
   labels:
     app.kubernetes.io/name: falco-driver-kmod
-    app.kubernetes.io/version: "0.41.0"
+    app.kubernetes.io/version: "0.41.1"
 data:
   # --- falco.yaml ---
   # The following configs deviate from the default falco.yaml
